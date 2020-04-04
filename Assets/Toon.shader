@@ -9,6 +9,10 @@
 		[HDR]
 		_SpecularColor("Specular Color", Color) = (0.9, 0.9, 0.9, 1)
 		_Glossiness("Glossiness", Float) = 32
+		[HDR]
+		_RimColor("Rim Color", Color) = (1, 1, 1, 1)
+		_RimAmount("Rim Amount", Range(0, 1)) = 0.716
+		_RimThreshold("Rim Threshold", Range(0, 1)) = 0.1
 	
 	}
 	SubShader
@@ -59,6 +63,9 @@
 			float4 _AmbientColor;
 			float _Glossiness;
 			float4 _SpecularColor;
+			float4 _RimColor;
+			float _RimAmount;
+			float _RimThreshold;
 
 			float4 frag (v2f i) : SV_Target
 			{
@@ -74,9 +81,13 @@
 				float specularIntensity = pow(NdotH * lightIntensity, _Glossiness * _Glossiness);
 				float specularIntensitySmooth = smoothstep(0.005, 0.01, specularIntensity);
 				float specular = specularIntensitySmooth * _SpecularColor;
-				
 
-				return _Color * sample * (_AmbientColor + light + specular);
+				float4 rimDot = 1 - dot(viewDir, normal);
+				float rimIntensity = rimDot * pow(NdotL, _RimThreshold);
+				rimIntensity = smoothstep(_RimAmount - 0.01, _RimAmount + 0.01, rimIntensity);
+				float4 rim = rimIntensity * _RimColor;
+				
+				return _Color * sample * (_AmbientColor + light + specular + rim);
 			}
 			ENDCG
 		}
