@@ -27,9 +27,11 @@
 			CGPROGRAM
 			#pragma vertex vert
 			#pragma fragment frag
+			#pragma multi_compile_fwdbase
 			
 			#include "UnityCG.cginc"
 			#include "Lighting.cginc"
+			#include "AutoLight.cginc"
 
 			struct appdata
 			{
@@ -44,6 +46,7 @@
 				float2 uv : TEXCOORD0;
 				float3 worldNormal : NORMAL;
 				float3 viewDir : TEXCOORD1;
+				SHADOW_COORDS(2)
 			};
 
 			sampler2D _MainTex;
@@ -56,6 +59,7 @@
 				o.uv = TRANSFORM_TEX(v.uv, _MainTex);
 				o.worldNormal = UnityObjectToWorldNormal(v.normal);
 				o.viewDir = WorldSpaceViewDir(v.vertex);
+				TRANSFER_SHADOW(o)
 				return o;
 			}
 			
@@ -72,7 +76,8 @@
 				float4 sample = tex2D(_MainTex, i.uv);
 				float3 normal = normalize(i.worldNormal);
 				float NdotL = dot(_WorldSpaceLightPos0, normal);
-				float lightIntensity = smoothstep(0, 0.01, NdotL);
+				float shadow = SHADOW_ATTENUATION(i);
+				float lightIntensity = smoothstep(0, 0.01, NdotL * shadow);
 				float4 light = lightIntensity * _LightColor0;
 
 				float3 viewDir = normalize(i.viewDir);
@@ -91,5 +96,6 @@
 			}
 			ENDCG
 		}
+		UsePass "Legacy Shaders/VertexLit/SHADOWCASTER"
 	}
 }
